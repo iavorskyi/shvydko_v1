@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Rounded square background -->
+  <rect x="0" y="0" width="512" height="512" rx="102" ry="102" fill="#6750A4"/>
+
+  <!-- Subtle inner shadow/highlight for depth -->
+  <rect x="10" y="10" width="492" height="492" rx="92" ry="92" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4"/>
+
+  <!-- Open book icon -->
+  <g transform="translate(256, 272)" fill="none" stroke="white" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Left page -->
+    <path d="M-10,-108 C-10,-108 -118,-124 -140,-96 C-140,-96 -140,76 -140,86 C-140,102 -118,102 -118,102 C-80,102 -10,92 -10,92" fill="rgba(255,255,255,0.15)"/>
+    <!-- Right page -->
+    <path d="M10,-108 C10,-108 118,-124 140,-96 C140,-96 140,76 140,86 C140,102 118,102 118,102 C80,102 10,92 10,92" fill="rgba(255,255,255,0.15)"/>
+    <!-- Spine -->
+    <line x1="0" y1="-108" x2="0" y2="92"/>
+    <!-- Left page lines -->
+    <line x1="-108" y1="-52" x2="-36" y2="-62" stroke="rgba(255,255,255,0.5)" stroke-width="7"/>
+    <line x1="-108" y1="-14" x2="-36" y2="-24" stroke="rgba(255,255,255,0.5)" stroke-width="7"/>
+    <line x1="-108" y1="24" x2="-36" y2="14" stroke="rgba(255,255,255,0.5)" stroke-width="7"/>
+    <!-- Right page lines -->
+    <line x1="108" y1="-52" x2="36" y2="-62" stroke="rgba(255,255,255,0.5)" stroke-width="7"/>
+    <line x1="108" y1="-14" x2="36" y2="-24" stroke="rgba(255,255,255,0.5)" stroke-width="7"/>
+    <line x1="108" y1="24" x2="36" y2="14" stroke="rgba(255,255,255,0.5)" stroke-width="7"/>
+  </g>
+
+  <!-- Speed/reading indicator lines above the book -->
+  <g transform="translate(256, 126)" stroke="white" stroke-width="10" stroke-linecap="round" opacity="0.9">
+    <line x1="-42" y1="0" x2="-42" y2="-38"/>
+    <line x1="0" y1="0" x2="0" y2="-54"/>
+    <line x1="42" y1="0" x2="42" y2="-38"/>
+  </g>
+</svg>
