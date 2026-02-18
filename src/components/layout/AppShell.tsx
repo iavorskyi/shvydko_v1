@@ -7,7 +7,7 @@ import { useUserStore } from "@/lib/stores/userStore";
 import { useSettingsStore } from "@/lib/stores/settingsStore";
 import { useSessionStore } from "@/lib/stores/sessionStore";
 import { useAchievements } from "@/lib/hooks/useAchievements";
-import { seedDatabase } from "@/lib/db/seed";
+import { seedDatabase, restoreUserPdfTexts } from "@/lib/db/seed";
 import { syncManager } from "@/lib/services/syncManager";
 import BottomNav from "./BottomNav";
 
@@ -79,6 +79,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     if (session?.user?.id && session.user.onboarded) {
       loadSettings(session.user.id);
       loadTodayData(session.user.id);
+      restoreUserPdfTexts();
     }
   }, [session?.user?.id, session?.user?.onboarded, loadSettings, loadTodayData]);
 

@@ -239,7 +239,8 @@ function LongReadPage() {
 
   const [wpm, setWpm] = useState(200);
   const [fontSize, setFontSize] = useState(settings?.fontSize ?? 18);
-  const [gameState, setGameState] = useState<"settings" | "playing" | "paused" | "done">("settings");
+  const [gameState, setGameState] = useState<"settings" | "countdown" | "playing" | "paused" | "done">("settings");
+  const [countdown, setCountdown] = useState(0);
 
   const [paragraphs, setParagraphs] = useState<string[][]>([]);
   const [totalWords, setTotalWords] = useState(0);
@@ -327,6 +328,8 @@ function LongReadPage() {
           return;
         }
 
+        const outlineData = result.outline.length > 0 ? result.outline : undefined;
+
         const localId = await db.texts.add({
           title: result.title,
           content: result.text,
@@ -337,8 +340,9 @@ function LongReadPage() {
           source: "pdf",
           isFavorite: 0,
           createdAt: new Date(),
-          outline: result.outline.length > 0 ? result.outline : undefined,
+          outline: outlineData,
           pageWordOffsets: result.pageWordOffsets,
+          pendingSync: true,
         } as Text);
 
         const newText: Text = {
@@ -352,23 +356,31 @@ function LongReadPage() {
           source: "pdf",
           isFavorite: 0,
           createdAt: new Date(),
-          outline: result.outline.length > 0 ? result.outline : undefined,
+          outline: outlineData,
           pageWordOffsets: result.pageWordOffsets,
+          pendingSync: true,
         };
 
         setTexts((prev) => [newText, ...prev]);
         setSelectedText(newText);
         setTextPickerTab("pdf");
 
+        // Sync to server
         if (api.isOnline()) {
           try {
-            await api.post("/texts/upload", {
+            const serverText = await api.post<{ id: string }>("/texts/upload", {
               title: result.title,
               content: result.text,
               wordCount: result.wordCount,
+              outline: outlineData,
+              pageWordOffsets: result.pageWordOffsets,
+            });
+            await db.texts.update(localId, {
+              serverId: serverText.id,
+              pendingSync: false,
             });
           } catch {
-            // Will exist locally
+            // Stays pendingSync: true — syncManager will retry
           }
         }
       } catch (err) {
@@ -410,12 +422,25 @@ function LongReadPage() {
 
       setCurrentWordIndex(startIdx);
       setResumedElapsed(elapsed * 1000);
-      setStartTime(Date.now());
       setStartFromWordIndex(null);
-      setGameState("playing");
+      // Start countdown instead of playing immediately
+      setCountdown(3);
+      setGameState("countdown");
     },
     [selectedText, currentUser?.id, loadProgress]
   );
+
+  // ── Countdown timer ──
+  useEffect(() => {
+    if (gameState !== "countdown") return;
+    if (countdown <= 0) {
+      setStartTime(Date.now());
+      setGameState("playing");
+      return;
+    }
+    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [gameState, countdown]);
 
   // ── Word advancement timer ──
   useEffect(() => {
@@ -613,6 +638,8 @@ function LongReadPage() {
             onClick={() => {
               if (gameState === "playing" || gameState === "paused") {
                 handleStop();
+              } else if (gameState === "countdown") {
+                setGameState("settings");
               } else {
                 router.back();
               }
@@ -866,6 +893,27 @@ function LongReadPage() {
           </motion.div>
         )}
 
+        {/* ── COUNTDOWN SCREEN ── */}
+        {gameState === "countdown" && (
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <motion.div
+              key={countdown}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="flex flex-col items-center"
+            >
+              <div className="text-8xl font-bold text-teal-500 tabular-nums">
+                {countdown}
+              </div>
+              <p className="text-sm text-gray-400 mt-4">
+                {selectedText?.title}
+              </p>
+            </motion.div>
+          </div>
+        )}
+
         {/* ── READING SCREEN ── */}
         {(gameState === "playing" || gameState === "paused") && (
           <div className="flex-1 flex flex-col">
@@ -907,12 +955,17 @@ function LongReadPage() {
                           className={cn(
                             "transition-colors duration-100",
                             isHighlighted &&
-                              "bg-teal-500/20 text-teal-700 dark:text-teal-300 font-semibold rounded px-0.5",
+                              "text-teal-700 dark:text-teal-300 border-b-2 border-teal-500",
                             isRead && "text-gray-400 dark:text-gray-500",
                             !isRead &&
                               !isHighlighted &&
                               "text-gray-800 dark:text-gray-200"
                           )}
+                          style={isHighlighted ? {
+                            textShadow: "0 0 0.5px currentColor",
+                            background: "linear-gradient(to top, rgba(20,184,166,0.15) 0%, rgba(20,184,166,0.05) 100%)",
+                            borderRadius: "2px",
+                          } : undefined}
                         >
                           {word}{" "}
                         </span>

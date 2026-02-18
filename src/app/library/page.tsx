@@ -73,6 +73,8 @@ export default function LibraryPage() {
           setPdfLoading(false);
           return;
         }
+        const outlineData = result.outline.length > 0 ? result.outline : undefined;
+
         const localId = await db.texts.add({
           title: result.title,
           content: result.text,
@@ -83,8 +85,9 @@ export default function LibraryPage() {
           source: "pdf",
           isFavorite: 0,
           createdAt: new Date(),
-          outline: result.outline.length > 0 ? result.outline : undefined,
+          outline: outlineData,
           pageWordOffsets: result.pageWordOffsets,
+          pendingSync: true,
         } as Text);
         const newText: Text = {
           id: localId,
@@ -97,20 +100,28 @@ export default function LibraryPage() {
           source: "pdf",
           isFavorite: 0,
           createdAt: new Date(),
-          outline: result.outline.length > 0 ? result.outline : undefined,
+          outline: outlineData,
           pageWordOffsets: result.pageWordOffsets,
+          pendingSync: true,
         };
         setTexts((prev) => [newText, ...prev]);
-        // Switch to PDF tab after upload
         setActiveTab("pdf");
+
+        // Sync to server
         if (api.isOnline()) {
           try {
-            await api.post("/texts/upload", {
+            const serverText = await api.post<{ id: string }>("/texts/upload", {
               title: result.title,
               content: result.text,
               wordCount: result.wordCount,
+              outline: outlineData,
+              pageWordOffsets: result.pageWordOffsets,
             });
-          } catch { /* local only */ }
+            await db.texts.update(localId, {
+              serverId: serverText.id,
+              pendingSync: false,
+            });
+          } catch { /* stays pendingSync: true */ }
         }
       } catch (err) {
         console.error("PDF parsing failed:", err);
@@ -152,13 +163,25 @@ export default function LibraryPage() {
   };
 
   const handleDeletePdf = async (textId: number) => {
+    // Get the text to find its serverId before deleting
+    const text = await db.texts.get(textId);
+
+    // Delete locally
     await db.texts.delete(textId);
-    // Also delete reading progress for this text
     try {
       await db.readingProgress.where("textId").equals(textId).delete();
     } catch { /* ok */ }
     setTexts((prev) => prev.filter((t) => t.id !== textId));
     setDeleteConfirmId(null);
+
+    // Delete from server (async, non-blocking)
+    if (text?.serverId && api.isOnline()) {
+      try {
+        await api.delete(`/texts/upload?id=${text.serverId}`);
+      } catch {
+        // Non-critical: orphaned server record won't cause issues
+      }
+    }
   };
 
   const handleTextClick = (text: Text) => {

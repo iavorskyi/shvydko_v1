@@ -67,6 +67,18 @@ export class ShvydkoDatabase extends Dexie {
       syncQueue: "++id, table, createdAt",
       readingProgress: "++id, userId, textId, [userId+textId]",
     });
+
+    this.version(4).stores({
+      trainingSessions: "++id, serverId, userId, sessionType, date, pendingSync",
+      texts: "++id, serverId, title, ageGroup, category, source, isFavorite, builtinKey, pendingSync",
+      testQuestions: "++id, serverId, textId",
+      testResults: "++id, serverId, sessionId, questionId, pendingSync",
+      achievements: "++id, serverId, userId, badgeType, pendingSync",
+      dailyGoals: "++id, serverId, userId, date, pendingSync",
+      settings: "userId",
+      syncQueue: "++id, table, createdAt",
+      readingProgress: "++id, userId, textId, [userId+textId]",
+    });
   }
 }
 

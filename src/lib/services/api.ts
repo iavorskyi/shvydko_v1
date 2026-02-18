@@ -37,6 +37,17 @@ class ApiClient {
     return res.json();
   }
 
+  async delete<T>(path: string): Promise<T> {
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
+    return res.json();
+  }
+
   isOnline(): boolean {
     return typeof navigator !== "undefined" && navigator.onLine;
   }

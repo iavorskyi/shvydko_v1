@@ -5,6 +5,7 @@ WORKDIR /app
 RUN apk add --no-cache openssl
 
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
 RUN npm ci
 
 # ---- Stage 2: Build ----
@@ -19,7 +20,8 @@ COPY . .
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Build Next.js (standalone output)
+# Build Next.js (standalone output for Docker)
+ENV DOCKER_BUILD=true
 RUN npm run build
 
 # ---- Stage 3: Production Runner ----

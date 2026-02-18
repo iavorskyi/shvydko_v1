@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  output: process.env.DOCKER_BUILD === "true" ? "standalone" : undefined,
   images: {
     unoptimized: true,
   },

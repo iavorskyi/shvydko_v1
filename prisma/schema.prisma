@@ -74,6 +74,7 @@ model User {
   settings         UserSettings?
   testResults      TestResult[]
   readingProgress  ReadingProgress[]
+  texts            Text[]
 }
 
 model Text {
@@ -87,10 +88,18 @@ model Text {
   source     String @default("builtin")
   builtinKey String? @unique
 
+  // PDF sync fields
+  userId          String?
+  outline         Json?
+  pageWordOffsets Json?
+
   createdAt DateTime @default(now())
 
+  user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
   questions       TestQuestion[]
   readingProgress ReadingProgress[]
+
+  @@index([userId, source])
 }
 
 model TestQuestion {

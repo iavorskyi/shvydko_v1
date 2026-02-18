@@ -34,6 +34,7 @@ export interface Text {
   createdAt: Date;
   outline?: PdfOutlineItem[]; // PDF table of contents
   pageWordOffsets?: number[]; // Word index where each PDF page starts
+  pendingSync?: boolean;
 }
 
 export interface TestQuestion {
