@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import Providers from "@/components/shared/Providers";
 import ToastContainer from "@/components/shared/Toast";
 import ServiceWorkerRegister from "@/components/shared/ServiceWorkerRegister";
 
@@ -34,9 +35,11 @@ export default function RootLayout({
         <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
       </head>
       <body className="min-h-screen">
-        {children}
-        <ToastContainer />
-        <ServiceWorkerRegister />
+        <Providers>
+          {children}
+          <ToastContainer />
+          <ServiceWorkerRegister />
+        </Providers>
       </body>
     </html>
   );

@@ -6,7 +6,7 @@ export interface AchievementCheckResult {
   newAchievements: string[];
 }
 
-export async function checkAchievements(userId: number): Promise<AchievementCheckResult> {
+export async function checkAchievements(userId: string): Promise<AchievementCheckResult> {
   const existingAchievements = await db.achievements
     .where("userId")
     .equals(userId)
@@ -36,24 +36,26 @@ export async function checkAchievements(userId: number): Promise<AchievementChec
     await grant("first_session");
   }
 
-  // first_text: First text read via RSVP
-  const rsvpSessions = sessions.filter((s) => s.sessionType === "rsvp");
-  if (rsvpSessions.length >= 1) {
+  // first_text: First text read via RSVP or Long Read
+  const readingSessions = sessions.filter(
+    (s) => s.sessionType === "rsvp" || s.sessionType === "longread"
+  );
+  if (readingSessions.length >= 1) {
     await grant("first_text");
   }
 
   // speed_300: Reading speed 300 wpm
-  if (rsvpSessions.some((s) => (s.speed || 0) >= 300)) {
+  if (readingSessions.some((s) => (s.speed || 0) >= 300)) {
     await grant("speed_300");
   }
 
   // speed_600: Reading speed 600 wpm
-  if (rsvpSessions.some((s) => (s.speed || 0) >= 600)) {
+  if (readingSessions.some((s) => (s.speed || 0) >= 600)) {
     await grant("speed_600");
   }
 
   // speed_1000: Reading speed 1000 wpm
-  if (rsvpSessions.some((s) => (s.speed || 0) >= 1000)) {
+  if (readingSessions.some((s) => (s.speed || 0) >= 1000)) {
     await grant("speed_1000");
   }
 
@@ -69,13 +71,19 @@ export async function checkAchievements(userId: number): Promise<AchievementChec
   }
 
   // texts_50: Read 50 texts
-  if (rsvpSessions.length >= 50) {
+  if (readingSessions.length >= 50) {
     await grant("texts_50");
   }
 
   // texts_100: Read 100 texts
-  if (rsvpSessions.length >= 100) {
+  if (readingSessions.length >= 100) {
     await grant("texts_100");
+  }
+
+  // longread_10: 10 long read sessions
+  const longreadSessions = sessions.filter((s) => s.sessionType === "longread");
+  if (longreadSessions.length >= 10) {
+    await grant("longread_10");
   }
 
   // schulte_10: 10 Schulte tables completed
@@ -116,6 +124,7 @@ export async function checkAchievements(userId: number): Promise<AchievementChec
     exerciseTypes.has("peripheral") &&
     exerciseTypes.has("schulte") &&
     exerciseTypes.has("rsvp") &&
+    exerciseTypes.has("longread") &&
     exerciseTypes.has("test")
   ) {
     await grant("all_exercises");

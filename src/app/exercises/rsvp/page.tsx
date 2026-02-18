@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Play, Pause, RotateCcw, Settings2, ChevronDown, ChevronUp } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import confetti from "canvas-confetti";
 import { useUserStore } from "@/lib/stores/userStore";
 import { useSessionStore } from "@/lib/stores/sessionStore";
@@ -45,8 +45,17 @@ function getOrpIndex(word: string): number {
   return firstLetterIdx + orpOffset;
 }
 
-export default function RsvpPage() {
+export default function RsvpPageWrapper() {
+  return (
+    <Suspense>
+      <RsvpPage />
+    </Suspense>
+  );
+}
+
+function RsvpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { currentUser } = useUserStore();
   const { saveSession } = useSessionStore();
 
@@ -66,11 +75,20 @@ export default function RsvpPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   useEffect(() => {
+    const textIdParam = searchParams.get("textId");
     db.texts.toArray().then((t) => {
       setTexts(t);
-      if (t.length > 0) setSelectedText(t[0]);
+      if (t.length > 0) {
+        // If textId query parameter exists, select that text
+        if (textIdParam) {
+          const targetText = t.find((tx) => tx.id === Number(textIdParam));
+          setSelectedText(targetText || t[0]);
+        } else {
+          setSelectedText(t[0]);
+        }
+      }
     });
-  }, []);
+  }, [searchParams]);
 
   const start = useCallback(() => {
     if (!selectedText) return;

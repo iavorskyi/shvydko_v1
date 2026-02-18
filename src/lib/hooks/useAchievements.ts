@@ -7,7 +7,7 @@ import { showToast } from "@/components/shared/Toast";
 import { BADGES } from "@/types";
 
 export function useAchievements() {
-  const check = useCallback(async (userId: number) => {
+  const check = useCallback(async (userId: string) => {
     try {
       const result = await checkAchievements(userId);
 

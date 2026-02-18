@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronLeft, BookOpen, Eye, Zap, Trophy } from "lucide-react";
 import { useUserStore } from "@/lib/stores/userStore";
@@ -49,7 +50,8 @@ const CLASSES = Array.from({ length: 11 }, (_, i) => i + 1);
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { createUser } = useUserStore();
+  const { update: updateSession } = useSession();
+  const { completeOnboarding } = useUserStore();
 
   const [step, setStep] = useState<"slides" | "profile">("slides");
   const [slideIndex, setSlideIndex] = useState(0);
@@ -80,7 +82,9 @@ export default function OnboardingPage() {
     if (!name.trim() || isCreating) return;
     setIsCreating(true);
     try {
-      await createUser({ name: name.trim(), age, schoolClass, avatarId });
+      await completeOnboarding({ name: name.trim(), age, schoolClass, avatarId });
+      // Refresh NextAuth session so it picks up new profile data
+      await updateSession();
       router.replace("/home");
     } catch {
       setIsCreating(false);

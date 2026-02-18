@@ -138,7 +138,15 @@ export default function ProfilePage() {
   const activityData = useMemo(() => getLast7DaysActivity(sessions), [sessions]);
   const speedData = useMemo(() => getSpeedTrend(sessions), [sessions]);
 
-  if (!currentUser) return null;
+  if (!currentUser) {
+    return (
+      <AppShell>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </AppShell>
+    );
+  }
 
   const earnedBadgeTypes = new Set(achievements.map((a) => a.badgeType));
 
@@ -152,7 +160,7 @@ export default function ProfilePage() {
           className="text-center mb-6"
         >
           <div className="w-20 h-20 rounded-full bg-primary-light/20 flex items-center justify-center text-4xl mx-auto mb-3">
-            {AVATARS[currentUser.avatarId] || "🦉"}
+            {AVATARS[currentUser.avatarId ?? 0] || "🦉"}
           </div>
           <h1 className="text-xl font-bold">{currentUser.name}</h1>
           <p className="text-sm text-gray-500">{currentUser.schoolClass} клас</p>

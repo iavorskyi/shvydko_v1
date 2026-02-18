@@ -5,6 +5,7 @@ const EXERCISE_POINTS: Record<ExerciseType, number> = {
   peripheral: POINTS.peripheral,
   schulte: POINTS.schulte,
   rsvp: POINTS.rsvp,
+  longread: POINTS.longread,
   test: POINTS.test_perfect,
 };
 

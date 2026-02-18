@@ -56,7 +56,7 @@ export default function PeripheralPage() {
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const getWords = useCallback(() => {
-    const ageGroup = currentUser ? getAgeGroup(currentUser.schoolClass) : "1-4";
+    const ageGroup = currentUser ? getAgeGroup(currentUser.schoolClass ?? 2) : "1-4";
     const bank = WORD_BANKS[ageGroup] || WORD_BANKS["1-4"];
     const shuffled = [...bank].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, wordCount);

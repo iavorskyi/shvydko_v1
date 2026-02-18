@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shvydkochytach-v1';
+const CACHE_NAME = 'shvydkochytach-v2';
 const STATIC_ASSETS = [
   '/',
   '/home',
@@ -10,6 +10,9 @@ const STATIC_ASSETS = [
   '/profile',
   '/settings',
   '/parent',
+  '/auth/login',
+  '/auth/register',
+  '/onboarding',
   '/manifest.json',
 ];
 
@@ -39,11 +42,16 @@ self.addEventListener('activate', (event) => {
 
 // Fetch - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
   // Skip chrome-extension and other non-http requests
   if (!event.request.url.startsWith('http')) return;
+
+  // Never cache API routes — they must always hit the server
+  if (url.pathname.startsWith('/api/')) return;
 
   event.respondWith(
     fetch(event.request)
@@ -69,4 +77,16 @@ self.addEventListener('fetch', (event) => {
         });
       })
   );
+});
+
+// Listen for sync messages from the app
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SYNC_PENDING') {
+    // Notify all clients to process sync queue
+    self.clients.matchAll().then((clients) => {
+      clients.forEach((client) => {
+        client.postMessage({ type: 'PROCESS_SYNC_QUEUE' });
+      });
+    });
+  }
 });

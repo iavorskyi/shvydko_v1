@@ -1,20 +1,20 @@
 import { create } from "zustand";
 import { db } from "@/lib/db";
+import { api } from "@/lib/services/api";
 import type { TrainingSession, DailyGoal } from "@/types";
-import { POINTS } from "@/types";
 
 interface SessionState {
   todaySessions: TrainingSession[];
   dailyGoals: DailyGoal[];
   streak: number;
   sessionSaveCount: number;
-  lastSessionUserId: number | null;
+  lastSessionUserId: string | null;
 
-  loadTodayData: (userId: number) => Promise<void>;
+  loadTodayData: (userId: string) => Promise<void>;
   saveSession: (session: Omit<TrainingSession, "id">) => Promise<number>;
-  getDailyGoals: (userId: number) => Promise<DailyGoal[]>;
-  updateGoalProgress: (userId: number, goalType: string) => Promise<void>;
-  calculateStreak: (userId: number) => Promise<number>;
+  getDailyGoals: (userId: string) => Promise<DailyGoal[]>;
+  updateGoalProgress: (userId: string, goalType: string) => Promise<void>;
+  calculateStreak: (userId: string) => Promise<number>;
 }
 
 function getToday(): string {
@@ -34,8 +34,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   sessionSaveCount: 0,
   lastSessionUserId: null,
 
-  loadTodayData: async (userId: number) => {
+  loadTodayData: async (userId: string) => {
     const todayStart = getTodayStart();
+
+    // Load from IndexedDB cache
     const sessions = await db.trainingSessions
       .where("userId")
       .equals(userId)
@@ -46,10 +48,30 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     const streak = await get().calculateStreak(userId);
 
     set({ todaySessions: sessions, dailyGoals: goals, streak });
+
+    // Refresh from server in background
+    if (api.isOnline()) {
+      try {
+        const serverSessions = await api.get<TrainingSession[]>("/sessions/today");
+        // We trust server data — update cache
+        set({ todaySessions: serverSessions });
+      } catch {
+        // Use cached data
+      }
+
+      try {
+        const serverGoals = await api.get<DailyGoal[]>("/goals/today");
+        set({ dailyGoals: serverGoals });
+      } catch {
+        // Use cached data
+      }
+    }
   },
 
   saveSession: async (session) => {
-    const id = await db.trainingSessions.add(session as TrainingSession);
+    // Save to local IndexedDB immediately
+    const localSession = { ...session, pendingSync: true };
+    const id = await db.trainingSessions.add(localSession as TrainingSession);
 
     set((state) => ({
       todaySessions: [...state.todaySessions, { ...session, id }],
@@ -57,9 +79,56 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       sessionSaveCount: state.sessionSaveCount + 1,
     }));
 
+    // Sync to server
+    if (api.isOnline()) {
+      try {
+        const serverSession = await api.post<{ id: string }>("/sessions", {
+          sessionType: session.sessionType,
+          date: session.date,
+          duration: session.duration,
+          result: session.result,
+          score: session.score,
+          speed: session.speed,
+          comprehension: session.comprehension,
+        });
+        // Update local with server ID
+        await db.trainingSessions.update(id, {
+          serverId: serverSession.id,
+          pendingSync: false,
+          syncedAt: new Date(),
+        });
+
+        // Also trigger server-side achievement check
+        try {
+          await api.post("/achievements/check");
+        } catch {
+          // Non-critical
+        }
+      } catch {
+        // Failed — add to sync queue for later
+        await db.syncQueue.add({
+          table: "trainingSessions",
+          operation: "create",
+          localId: id,
+          data: session as unknown as Record<string, unknown>,
+          createdAt: new Date(),
+        });
+      }
+    } else {
+      // Offline — queue for sync
+      await db.syncQueue.add({
+        table: "trainingSessions",
+        operation: "create",
+        localId: id,
+        data: session as unknown as Record<string, unknown>,
+        createdAt: new Date(),
+      });
+    }
+
+    // Update local goals
     await get().updateGoalProgress(session.userId, session.sessionType);
 
-    // Update minutes goal
+    // Update minutes goal locally
     const today = getToday();
     const goals = await db.dailyGoals
       .where("userId")
@@ -89,7 +158,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     return id;
   },
 
-  getDailyGoals: async (userId: number) => {
+  getDailyGoals: async (userId: string) => {
     const today = getToday();
     let goals = await db.dailyGoals
       .where("userId")
@@ -116,7 +185,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     return goals;
   },
 
-  updateGoalProgress: async (userId: number, goalType: string) => {
+  updateGoalProgress: async (userId: string, goalType: string) => {
     const today = getToday();
     const goals = await db.dailyGoals
       .where("userId")
@@ -131,7 +200,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       });
     }
 
-    if (goalType === "rsvp" || goalType === "test") {
+    if (goalType === "rsvp" || goalType === "test" || goalType === "longread") {
       const textGoal = goals.find((g) => g.goalType === "texts");
       if (textGoal?.id) {
         await db.dailyGoals.update(textGoal.id, {
@@ -143,14 +212,14 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set((state) => ({
       dailyGoals: state.dailyGoals.map((g) => {
         if (g.goalType === "sessions") return { ...g, achieved: g.achieved + 1 };
-        if ((goalType === "rsvp" || goalType === "test") && g.goalType === "texts")
+        if ((goalType === "rsvp" || goalType === "test" || goalType === "longread") && g.goalType === "texts")
           return { ...g, achieved: g.achieved + 1 };
         return g;
       }),
     }));
   },
 
-  calculateStreak: async (userId: number) => {
+  calculateStreak: async (userId: string) => {
     const sessions = await db.trainingSessions
       .where("userId")
       .equals(userId)

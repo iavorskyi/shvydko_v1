@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Eye, Grid3X3, Zap, ClipboardCheck, Trophy, ArrowRight, Clock, Target } from "lucide-react";
+import { Eye, Grid3X3, Zap, ClipboardCheck, BookOpen, Trophy, ArrowRight, Clock, Target } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/stores/userStore";
 import { db } from "@/lib/db";
@@ -36,6 +36,15 @@ const EXERCISES = [
     color: "bg-green-500",
     lightBg: "bg-green-50 dark:bg-green-500/10",
     textColor: "text-green-600 dark:text-green-400",
+  },
+  {
+    href: "/exercises/longread",
+    icon: BookOpen,
+    label: "Довге читання",
+    description: "Читай повні тексти з підсвіткою слів на заданій швидкості",
+    color: "bg-teal-500",
+    lightBg: "bg-teal-50 dark:bg-teal-500/10",
+    textColor: "text-teal-600 dark:text-teal-400",
   },
   {
     href: "/library",
@@ -90,9 +99,11 @@ export default function ExercisesPage() {
         <div className="space-y-3">
           {EXERCISES.map((ex, i) => {
             const Icon = ex.icon;
-            const stat = stats[ex.href.includes("peripheral") ? "peripheral" :
-                          ex.href.includes("schulte") ? "schulte" :
-                          ex.href.includes("rsvp") ? "rsvp" : "test"];
+            const statKey = ex.href.includes("peripheral") ? "peripheral" :
+                           ex.href.includes("schulte") ? "schulte" :
+                           ex.href.includes("longread") ? "longread" :
+                           ex.href.includes("rsvp") ? "rsvp" : "test";
+            const stat = stats[statKey];
             return (
               <motion.button
                 key={ex.href}

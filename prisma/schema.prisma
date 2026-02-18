@@ -1,0 +1,201 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ NextAuth Required Tables ============
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============ Application Tables ============
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  image         String?
+
+  // App profile fields (filled during onboarding)
+  name        String?
+  age         Int?
+  schoolClass Int?
+  avatarId    Int?
+  onboarded   Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastLogin DateTime @default(now())
+
+  // Relations
+  accounts         Account[]
+  sessions         Session[]
+  trainingSessions TrainingSession[]
+  achievements     Achievement[]
+  dailyGoals       DailyGoal[]
+  settings         UserSettings?
+  testResults      TestResult[]
+  readingProgress  ReadingProgress[]
+}
+
+model Text {
+  id         String @id @default(cuid())
+  title      String
+  content    String @db.Text
+  difficulty Int
+  ageGroup   String
+  category   String
+  wordCount  Int
+  source     String @default("builtin")
+  builtinKey String? @unique
+
+  createdAt DateTime @default(now())
+
+  questions       TestQuestion[]
+  readingProgress ReadingProgress[]
+}
+
+model TestQuestion {
+  id            String   @id @default(cuid())
+  textId        String
+  question      String
+  questionType  String
+  correctAnswer String
+  options       String[]
+  explanation   String
+
+  text        Text         @relation(fields: [textId], references: [id], onDelete: Cascade)
+  testResults TestResult[]
+}
+
+model TrainingSession {
+  id            String   @id @default(cuid())
+  userId        String
+  sessionType   String
+  date          DateTime
+  duration      Int
+  result        Json
+  score         Int
+  speed         Int?
+  comprehension Int?
+
+  createdAt DateTime @default(now())
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testResults TestResult[]
+
+  @@index([userId, date])
+}
+
+model TestResult {
+  id         String  @id @default(cuid())
+  sessionId  String
+  questionId String
+  userId     String
+  userAnswer String
+  isCorrect  Boolean
+  timeSpent  Int
+
+  session  TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question TestQuestion    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model Achievement {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeType String
+  earnedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeType])
+  @@index([userId])
+}
+
+model DailyGoal {
+  id       String @id @default(cuid())
+  userId   String
+  date     String
+  goalType String
+  target   Int
+  achieved Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date, goalType])
+  @@index([userId, date])
+}
+
+model UserSettings {
+  userId               String  @id
+  theme                String  @default("light")
+  fontSize             Int     @default(16)
+  reminderEnabled      Boolean @default(false)
+  reminderTime         String  @default("18:00")
+  soundEnabled         Boolean @default(true)
+  parentControlEnabled Boolean @default(false)
+  parentPin            String  @default("")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ReadingProgress {
+  id               String   @id @default(cuid())
+  userId           String
+  textId           String
+  currentWordIndex Int
+  totalWords       Int
+  wpm              Int
+  fontSize         Int      @default(16)
+  elapsedSeconds   Int      @default(0)
+  completed        Boolean  @default(false)
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text Text @relation(fields: [textId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, textId])
+  @@index([userId])
+}

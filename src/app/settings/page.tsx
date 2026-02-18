@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Sun, Moon, Monitor, Type, Bell, BellOff, Volume2, VolumeX,
-  Shield, Users, ChevronRight, Trash2, Info
+  Shield, ChevronRight, Info, LogOut
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { useUserStore } from "@/lib/stores/userStore";
 import { useSettingsStore } from "@/lib/stores/settingsStore";
 import { cn } from "@/lib/utils/cn";
@@ -16,13 +17,20 @@ const AVATARS = ["🦉", "🦊", "🐱", "🐶", "🦁", "🐼", "🐰", "🦋"]
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { currentUser, users, setCurrentUser, deleteUser } = useUserStore();
-  const { settings, updateSettings, toggleTheme } = useSettingsStore();
+  const { currentUser } = useUserStore();
+  const { settings, updateSettings } = useSettingsStore();
 
-  const [showProfiles, setShowProfiles] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
-  if (!currentUser || !settings) return null;
+  if (!currentUser || !settings) {
+    return (
+      <AppShell>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </AppShell>
+    );
+  }
 
   const themeIcons = {
     light: Sun,
@@ -44,101 +52,23 @@ export default function SettingsPage() {
         >
           <div className="flex items-center gap-3">
             <div className="w-14 h-14 rounded-full bg-primary-light/20 flex items-center justify-center text-3xl">
-              {AVATARS[currentUser.avatarId] || "🦉"}
+              {AVATARS[currentUser.avatarId ?? 0] || "🦉"}
             </div>
             <div className="flex-1">
               <h3 className="font-bold">{currentUser.name}</h3>
               <p className="text-sm text-gray-500">
                 {currentUser.age} років, {currentUser.schoolClass} клас
               </p>
+              <p className="text-xs text-gray-400">{currentUser.email}</p>
             </div>
           </div>
-        </motion.div>
-
-        {/* Profiles */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="card mb-4"
-        >
-          <button
-            onClick={() => setShowProfiles(!showProfiles)}
-            className="w-full flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3">
-              <Users size={20} className="text-gray-500" />
-              <span className="font-medium">Профілі</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">{users.length}/5</span>
-              <ChevronRight
-                size={18}
-                className={cn("transition-transform", showProfiles && "rotate-90")}
-              />
-            </div>
-          </button>
-
-          {showProfiles && (
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: "auto" }}
-              className="mt-3 space-y-2 overflow-hidden"
-            >
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className={cn(
-                    "flex items-center gap-3 p-2 rounded-xl transition-all",
-                    user.id === currentUser.id
-                      ? "bg-primary/5"
-                      : "hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                  )}
-                >
-                  <button
-                    onClick={() => {
-                      if (user.id !== currentUser.id) setCurrentUser(user);
-                    }}
-                    className="flex items-center gap-3 flex-1"
-                  >
-                    <span className="text-xl">
-                      {AVATARS[user.avatarId] || "🦉"}
-                    </span>
-                    <span className="text-sm font-medium">{user.name}</span>
-                    {user.id === currentUser.id && (
-                      <span className="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full">
-                        Активний
-                      </span>
-                    )}
-                  </button>
-                  {users.length > 1 && (
-                    <button
-                      onClick={() => setShowDeleteConfirm(user.id!)}
-                      className="p-1.5 text-gray-400 hover:text-red-500"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-              ))}
-
-              {users.length < 5 && (
-                <button
-                  onClick={() => router.push("/onboarding")}
-                  className="w-full p-2 text-sm text-primary font-medium text-center rounded-xl hover:bg-primary/5"
-                >
-                  + Додати профіль
-                </button>
-              )}
-            </motion.div>
-          )}
         </motion.div>
 
         {/* Appearance */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.05 }}
           className="card mb-4 space-y-4"
         >
           <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">
@@ -196,7 +126,7 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
+          transition={{ delay: 0.1 }}
           className="card mb-4 space-y-4"
         >
           <h3 className="font-semibold text-sm text-gray-500 uppercase tracking-wide">
@@ -250,7 +180,7 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.15 }}
           className="card mb-4"
         >
           <button
@@ -269,7 +199,7 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
+          transition={{ delay: 0.2 }}
           className="card mb-4"
         >
           <div className="flex items-center gap-3">
@@ -281,33 +211,46 @@ export default function SettingsPage() {
           </div>
         </motion.div>
 
-        {/* Delete confirm modal */}
-        {showDeleteConfirm !== null && (
+        {/* Sign Out */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="card mb-4"
+        >
+          <button
+            onClick={() => setShowSignOutConfirm(true)}
+            className="w-full flex items-center gap-3 text-red-500"
+          >
+            <LogOut size={20} />
+            <span className="font-medium">Вийти з облікового запису</span>
+          </button>
+        </motion.div>
+
+        {/* Sign out confirm modal */}
+        {showSignOutConfirm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
             <motion.div
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full"
             >
-              <h3 className="font-bold text-lg mb-2">Видалити профіль?</h3>
+              <h3 className="font-bold text-lg mb-2">Вийти з облікового запису?</h3>
               <p className="text-sm text-gray-500 mb-4">
-                Всі дані профілю будуть видалені. Цю дію неможливо скасувати.
+                Ви зможете увійти знову з тим самим акаунтом. Ваші дані збережуться.
               </p>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowDeleteConfirm(null)}
+                  onClick={() => setShowSignOutConfirm(false)}
                   className="btn-secondary flex-1"
                 >
                   Скасувати
                 </button>
                 <button
-                  onClick={() => {
-                    deleteUser(showDeleteConfirm);
-                    setShowDeleteConfirm(null);
-                  }}
+                  onClick={() => signOut({ callbackUrl: "/auth/login" })}
                   className="flex-1 bg-red-500 text-white rounded-2xl px-6 py-3 font-semibold active:scale-95"
                 >
-                  Видалити
+                  Вийти
                 </button>
               </div>
             </motion.div>

@@ -35,6 +35,13 @@ const EXERCISES = [
     lightBg: "bg-green-50 dark:bg-green-500/10",
   },
   {
+    href: "/exercises/longread",
+    icon: BookOpen,
+    label: "Довге читання",
+    color: "bg-teal-500",
+    lightBg: "bg-teal-50 dark:bg-teal-500/10",
+  },
+  {
     href: "/library",
     icon: ClipboardCheck,
     label: "Тексти & Тести",
@@ -63,7 +70,15 @@ export default function HomePage() {
     }
   }, [currentUser?.id, loadTodayData, getTotalPoints, sessionSaveCount]);
 
-  if (!currentUser) return null;
+  if (!currentUser) {
+    return (
+      <AppShell>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </AppShell>
+    );
+  }
 
   const completedGoals = dailyGoals.filter((g) => g.achieved >= g.target).length;
 
@@ -78,7 +93,7 @@ export default function HomePage() {
         >
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-primary-light/20 flex items-center justify-center text-2xl">
-              {AVATARS[currentUser.avatarId] || "🦉"}
+              {AVATARS[currentUser.avatarId ?? 0] || "🦉"}
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Привіт! 👋</p>

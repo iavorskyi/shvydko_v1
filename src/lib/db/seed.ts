@@ -1,10 +1,34 @@
 import { db } from "./index";
+import { api } from "@/lib/services/api";
 import type { Text, TestQuestion } from "@/types";
 
 export async function seedDatabase() {
   const textCount = await db.texts.count();
   if (textCount > 0) return; // Already seeded
 
+  // Try to load from server first
+  if (api.isOnline()) {
+    try {
+      const serverTexts = await api.get<Text[]>("/texts");
+      if (serverTexts.length > 0) {
+        for (const text of serverTexts) {
+          await db.texts.add({
+            ...text,
+            builtinKey: text.title,
+            source: "builtin",
+            isFavorite: 0,
+            createdAt: new Date(),
+          } as Text);
+        }
+        console.log(`Seeded ${serverTexts.length} texts from server`);
+        return;
+      }
+    } catch {
+      // Fall back to local seeding
+    }
+  }
+
+  // Local fallback: seed from bundled content
   try {
     const { BUILTIN_TEXTS, BUILTIN_QUESTIONS } = await import("@/lib/content/texts");
 
@@ -21,6 +45,7 @@ export async function seedDatabase() {
         wordCount: builtinText.wordCount,
         source: "builtin",
         isFavorite: 0,
+        builtinKey: builtinText.title,
         createdAt: new Date(),
       } as Text);
       textIdMap.set(builtinText.title, id);

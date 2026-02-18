@@ -1,27 +1,27 @@
-export interface User {
-  id?: number;
-  name: string;
-  age: number;
-  schoolClass: number;
-  avatarId: number;
-  createdAt: Date;
-  lastLogin: Date;
-}
-
 export interface TrainingSession {
   id?: number;
-  userId: number;
-  sessionType: "peripheral" | "schulte" | "rsvp" | "test";
+  serverId?: string;
+  userId: string;
+  sessionType: "peripheral" | "schulte" | "rsvp" | "test" | "longread";
   date: Date;
   duration: number;
   result: Record<string, unknown>;
   score: number;
   speed?: number;
   comprehension?: number;
+  pendingSync?: boolean;
+  syncedAt?: Date;
+}
+
+export interface PdfOutlineItem {
+  title: string;
+  pageIndex: number; // 0-based page index
+  level: number; // nesting depth (0 = top level)
 }
 
 export interface Text {
   id?: number;
+  serverId?: string;
   title: string;
   content: string;
   difficulty: number;
@@ -30,11 +30,15 @@ export interface Text {
   wordCount: number;
   source: "builtin" | "pdf";
   isFavorite: number;
+  builtinKey?: string;
   createdAt: Date;
+  outline?: PdfOutlineItem[]; // PDF table of contents
+  pageWordOffsets?: number[]; // Word index where each PDF page starts
 }
 
 export interface TestQuestion {
   id?: number;
+  serverId?: string;
   textId: number;
   question: string;
   questionType: "multiple_choice" | "yes_no" | "sequence";
@@ -45,31 +49,37 @@ export interface TestQuestion {
 
 export interface TestResult {
   id?: number;
+  serverId?: string;
   sessionId: number;
   questionId: number;
   userAnswer: string;
   isCorrect: boolean;
   timeSpent: number;
+  pendingSync?: boolean;
 }
 
 export interface Achievement {
   id?: number;
-  userId: number;
+  serverId?: string;
+  userId: string;
   badgeType: string;
   earnedAt: Date;
+  pendingSync?: boolean;
 }
 
 export interface DailyGoal {
   id?: number;
-  userId: number;
+  serverId?: string;
+  userId: string;
   date: string;
   goalType: "sessions" | "minutes" | "texts";
   target: number;
   achieved: number;
+  pendingSync?: boolean;
 }
 
 export interface UserSettings {
-  userId: number;
+  userId: string;
   theme: "light" | "dark" | "auto";
   fontSize: number;
   reminderEnabled: boolean;
@@ -81,7 +91,7 @@ export interface UserSettings {
 
 export type AgeGroup = "1-4" | "5-8" | "9-11";
 export type TextCategory = "казки" | "наука" | "класика" | "історія" | "природа";
-export type ExerciseType = "peripheral" | "schulte" | "rsvp" | "test";
+export type ExerciseType = "peripheral" | "schulte" | "rsvp" | "test" | "longread";
 
 export interface SchulteResult {
   gridSize: number;
@@ -104,6 +114,27 @@ export interface RsvpResult {
   completed: boolean;
 }
 
+export interface LongReadResult {
+  textId: number;
+  wordsRead: number;
+  wpm: number;
+  completed: boolean;
+  resumedFrom?: number;
+}
+
+export interface ReadingProgress {
+  id?: number;
+  userId: string;
+  textId: number;
+  currentWordIndex: number;
+  totalWords: number;
+  wpm: number;
+  fontSize: number;
+  elapsedSeconds: number;
+  completed: boolean;
+  updatedAt: Date;
+}
+
 export const BADGES: Record<string, { name: string; description: string; icon: string }> = {
   first_session: { name: "Перші кроки", description: "Перша тренувальна сесія", icon: "🏆" },
   first_text: { name: "Перша книга", description: "Перший прочитаний текст", icon: "📚" },
@@ -120,6 +151,7 @@ export const BADGES: Record<string, { name: string; description: string; icon: s
   schulte_fast: { name: "Блискавичний пошук", description: "Таблиця 5×5 за 30 секунд", icon: "🏃" },
   all_exercises: { name: "Універсал", description: "Пройдено всі типи вправ", icon: "🎓" },
   texts_100: { name: "Бібліотекар", description: "Прочитано 100 текстів", icon: "📚" },
+  longread_10: { name: "Книжковий черв'як", description: "10 текстів у режимі довгого читання", icon: "📖" },
 };
 
 export const LEVELS = [
@@ -133,6 +165,7 @@ export const POINTS = {
   peripheral: 10,
   schulte: 15,
   rsvp: 20,
+  longread: 25,
   test_perfect: 50,
   daily_goal: 30,
   streak_bonus: 5,
