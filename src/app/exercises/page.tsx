@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Eye, Grid3X3, Zap, ClipboardCheck, BookOpen, Trophy, ArrowRight, Clock, Target } from "lucide-react";
+import { Eye, Grid3X3, Zap, ClipboardCheck, BookOpen, Trophy, ArrowRight, Clock, Target, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/stores/userStore";
 import { db } from "@/lib/db";
@@ -45,6 +45,15 @@ const EXERCISES = [
     color: "bg-teal-500",
     lightBg: "bg-teal-50 dark:bg-teal-500/10",
     textColor: "text-teal-600 dark:text-teal-400",
+  },
+  {
+    href: "/exercises/pdfread",
+    icon: FileText,
+    label: "PDF Читання",
+    description: "Читай PDF файли з трекером прогресу та регульованою швидкістю",
+    color: "bg-orange-500",
+    lightBg: "bg-orange-50 dark:bg-orange-500/10",
+    textColor: "text-orange-600 dark:text-orange-400",
   },
   {
     href: "/library",
@@ -102,6 +111,7 @@ export default function ExercisesPage() {
             const statKey = ex.href.includes("peripheral") ? "peripheral" :
                            ex.href.includes("schulte") ? "schulte" :
                            ex.href.includes("longread") ? "longread" :
+                           ex.href.includes("pdfread") ? "pdfread" :
                            ex.href.includes("rsvp") ? "rsvp" : "test";
             const stat = stats[statKey];
             return (

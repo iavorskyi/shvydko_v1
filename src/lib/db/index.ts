@@ -8,6 +8,7 @@ import type {
   DailyGoal,
   UserSettings,
   ReadingProgress,
+  PdfFile,
 } from "@/types";
 
 export interface SyncQueueItem {
@@ -29,6 +30,7 @@ export class ShvydkoDatabase extends Dexie {
   settings!: Table<UserSettings, string>;
   syncQueue!: Table<SyncQueueItem, number>;
   readingProgress!: Table<ReadingProgress, number>;
+  pdfFiles!: Table<PdfFile, number>;
 
   constructor() {
     super("ShvydkoDatabase");
@@ -78,6 +80,19 @@ export class ShvydkoDatabase extends Dexie {
       settings: "userId",
       syncQueue: "++id, table, createdAt",
       readingProgress: "++id, userId, textId, [userId+textId]",
+    });
+
+    this.version(5).stores({
+      trainingSessions: "++id, serverId, userId, sessionType, date, pendingSync",
+      texts: "++id, serverId, title, ageGroup, category, source, isFavorite, builtinKey, pendingSync",
+      testQuestions: "++id, serverId, textId",
+      testResults: "++id, serverId, sessionId, questionId, pendingSync",
+      achievements: "++id, serverId, userId, badgeType, pendingSync",
+      dailyGoals: "++id, serverId, userId, date, pendingSync",
+      settings: "userId",
+      syncQueue: "++id, table, createdAt",
+      readingProgress: "++id, userId, textId, [userId+textId]",
+      pdfFiles: "++id, userId, createdAt",
     });
   }
 }

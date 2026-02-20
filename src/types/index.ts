@@ -2,7 +2,7 @@ export interface TrainingSession {
   id?: number;
   serverId?: string;
   userId: string;
-  sessionType: "peripheral" | "schulte" | "rsvp" | "test" | "longread";
+  sessionType: "peripheral" | "schulte" | "rsvp" | "test" | "longread" | "pdfread";
   date: Date;
   duration: number;
   result: Record<string, unknown>;
@@ -90,9 +90,21 @@ export interface UserSettings {
   parentPin: string;
 }
 
+export interface PdfFile {
+  id?: number;
+  userId: string;
+  title: string;
+  fileName: string;
+  fileData: Blob;
+  pageCount: number;
+  outline?: PdfOutlineItem[];
+  pageWordOffsets?: number[];
+  createdAt: Date;
+}
+
 export type AgeGroup = "1-4" | "5-8" | "9-11";
 export type TextCategory = "казки" | "наука" | "класика" | "історія" | "природа";
-export type ExerciseType = "peripheral" | "schulte" | "rsvp" | "test" | "longread";
+export type ExerciseType = "peripheral" | "schulte" | "rsvp" | "test" | "longread" | "pdfread";
 
 export interface SchulteResult {
   gridSize: number;

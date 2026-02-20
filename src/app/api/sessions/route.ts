@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 const sessionSchema = z.object({
-  sessionType: z.enum(["peripheral", "schulte", "rsvp", "test", "longread"]),
+  sessionType: z.enum(["peripheral", "schulte", "rsvp", "test", "longread", "pdfread"]),
   date: z.string().transform((s) => new Date(s)),
   duration: z.number().min(0),
   result: z.record(z.string(), z.unknown()),
