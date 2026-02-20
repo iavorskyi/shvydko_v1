@@ -10,6 +10,8 @@ import {
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
+  ArrowLeftCircle,
+  ArrowRightCircle,
   Play,
   Pause,
   FileUp,
@@ -583,26 +585,50 @@ function PdfReadContent() {
             <p className="text-sm text-gray-500">Завантаження PDF…</p>
           </div>
         ) : pdfDoc ? (
-          <div className="relative inline-block">
-            <PdfPageRenderer
-              pdfDoc={pdfDoc}
-              pageNum={currentPage}
-              scale={zoom}
-              onDimensionsReady={handleDimensionsReady}
-              onWordsReady={handleWordsReady}
-            />
-            {/* Canvas tracker — only render when page dims are known */}
-            {pageDims.w > 0 && pageDims.h > 0 && (
-              <PdfReadTracker
-                pageWidth={pageDims.w}
-                pageHeight={pageDims.h}
-                words={pageWords}
-                currentWordIndex={currentWordIdx}
-                isPlaying={isPlaying}
-                wpm={wpm}
-                onClickWord={handleClickWord}
+          <div className="flex items-center gap-2">
+            {/* Prev page button */}
+            <button
+              onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="shrink-0 flex flex-col items-center gap-1 p-2 rounded-xl text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+              title="Попередня сторінка"
+            >
+              <ArrowLeftCircle size={32} />
+              <span className="text-[10px] font-medium leading-none">Назад</span>
+            </button>
+
+            <div className="relative inline-block">
+              <PdfPageRenderer
+                pdfDoc={pdfDoc}
+                pageNum={currentPage}
+                scale={zoom}
+                onDimensionsReady={handleDimensionsReady}
+                onWordsReady={handleWordsReady}
               />
-            )}
+              {/* Canvas tracker — only render when page dims are known */}
+              {pageDims.w > 0 && pageDims.h > 0 && (
+                <PdfReadTracker
+                  pageWidth={pageDims.w}
+                  pageHeight={pageDims.h}
+                  words={pageWords}
+                  currentWordIndex={currentWordIdx}
+                  isPlaying={isPlaying}
+                  wpm={wpm}
+                  onClickWord={handleClickWord}
+                />
+              )}
+            </div>
+
+            {/* Next page button */}
+            <button
+              onClick={() => selectedPdf && currentPage < selectedPdf.pageCount && handlePageChange(currentPage + 1)}
+              disabled={!selectedPdf || currentPage >= selectedPdf.pageCount}
+              className="shrink-0 flex flex-col items-center gap-1 p-2 rounded-xl text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+              title="Наступна сторінка"
+            >
+              <ArrowRightCircle size={32} />
+              <span className="text-[10px] font-medium leading-none">Вперед</span>
+            </button>
           </div>
         ) : null}
       </div>

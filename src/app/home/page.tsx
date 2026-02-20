@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Eye, Grid3X3, Zap, ClipboardCheck, BookOpen, Flame, Target, Clock } from "lucide-react";
+import { Eye, Grid3X3, Zap, BookOpen, FileText, Flame, Target, Clock } from "lucide-react";
 import { useUserStore } from "@/lib/stores/userStore";
 import { useSessionStore } from "@/lib/stores/sessionStore";
 import { getLevelInfo } from "@/lib/utils/scoring";
@@ -42,11 +42,11 @@ const EXERCISES = [
     lightBg: "bg-teal-50 dark:bg-teal-500/10",
   },
   {
-    href: "/library",
-    icon: ClipboardCheck,
-    label: "Тексти & Тести",
-    color: "bg-purple-500",
-    lightBg: "bg-purple-50 dark:bg-purple-500/10",
+    href: "/exercises/pdfread",
+    icon: FileText,
+    label: "PDF Читання",
+    color: "bg-orange-500",
+    lightBg: "bg-orange-50 dark:bg-orange-500/10",
   },
 ];
 
