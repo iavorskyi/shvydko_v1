@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Eye, Grid3X3, Zap, ClipboardCheck, BookOpen, Trophy, ArrowRight, Clock, Target, FileText } from "lucide-react";
+import { Eye, Grid3X3, Zap, BookOpen, Trophy, ArrowRight, Clock, Target, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/stores/userStore";
 import { db } from "@/lib/db";
@@ -54,15 +54,6 @@ const EXERCISES = [
     color: "bg-orange-500",
     lightBg: "bg-orange-50 dark:bg-orange-500/10",
     textColor: "text-orange-600 dark:text-orange-400",
-  },
-  {
-    href: "/library",
-    icon: ClipboardCheck,
-    label: "Тексти & Тести",
-    description: "Обери текст для читання та перевір розуміння",
-    color: "bg-purple-500",
-    lightBg: "bg-purple-50 dark:bg-purple-500/10",
-    textColor: "text-purple-600 dark:text-purple-400",
   },
 ];
 
